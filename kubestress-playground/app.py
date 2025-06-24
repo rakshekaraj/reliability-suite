@@ -1,77 +1,58 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import random
 import time
-from kubectl_utils import get_pods, exec_cpu_load, get_pod_metrics, get_hpa_status
 
-# --- SESSION STATE FOR HISTORY ---
+# ------------------ MOCK DATA ------------------
+FAKE_PODS = ["reliability-api-abc123", "reliability-api-def456", "reliability-api-ghi789"]
+
+FAKE_HPA_STATUS = """NAME                   REFERENCE                     TARGETS         MINPODS   MAXPODS
+reliability-api-hpa   Deployment/reliability-api   75%/50%          2         5
+"""
+
 if "cpu_history" not in st.session_state:
-    st.session_state.cpu_history = {}
+    st.session_state.cpu_history = {pod: [] for pod in FAKE_PODS}
 
-# --- POD LOAD CONTROL UI ---
-st.title("🧪 KubeStress Playground")
-st.markdown("Simulate load on Kubernetes pods and watch autoscaling in action!")
+# ------------------ PAGE LAYOUT ------------------
+st.set_page_config(layout="wide")
+st.title("🧪 KubeStress Playground (Simulated)")
+st.markdown("Simulate load on Kubernetes pods and watch autoscaling **mocked** in action!")
 
-# Get current pods
-pods = get_pods()
+# ------------------ POD SIMULATION ------------------
 st.subheader("📦 Current Pods")
-st.json(pods)
+st.json(FAKE_PODS)
 
-selected_pod = st.selectbox("Select a pod to stress", pods)
+selected_pod = st.selectbox("Select a pod to stress", FAKE_PODS, key="stress")
 
 if st.button("🔥 Simulate CPU Load"):
-    exec_cpu_load(selected_pod)
-    st.success(f"Started CPU stress on pod: {selected_pod}")
+    new_cpu = random.randint(40, 100)
+    now = pd.Timestamp.now()
+    st.session_state.cpu_history[selected_pod].append({"time": now, "cpu": new_cpu})
+    st.success(f"Mock CPU stress on {selected_pod} at {new_cpu} millicores")
 
-# --- METRICS ---
-st.subheader("📊 Pod Metrics (`kubectl top pods`)")
-metrics_raw = get_pod_metrics()
-st.code(metrics_raw)
+# ------------------ METRICS ------------------
+st.subheader("📊 Pod Metrics")
+st.code("Mock: kubectl top pods")
+for pod in FAKE_PODS:
+    usage = st.session_state.cpu_history[pod][-1]["cpu"] if st.session_state.cpu_history[pod] else 0
+    st.text(f"{pod} - {usage} millicores")
 
-st.subheader("📈 HPA Status (`kubectl get hpa`)")
-st.code(get_hpa_status())
+st.subheader("📈 HPA Status (Mock)")
+st.code(FAKE_HPA_STATUS)
 
-# --- CPU METRIC HISTORY + CHART ---
-def parse_pod_metrics(raw_output):
-    lines = raw_output.strip().split("\n")[1:]  # Skip header
-    data = []
-    timestamp = pd.Timestamp.now()
-    for line in lines:
-        parts = line.split()
-        if len(parts) >= 3:
-            name, cpu = parts[0], parts[1]
-            if cpu.endswith("m"):
-                cpu_val = int(cpu.replace("m", ""))
-            else:
-                cpu_val = int(cpu) * 1000  # fallback
-            data.append((name, cpu_val, timestamp))
-    return data
-
-metrics_data = parse_pod_metrics(metrics_raw)
-for name, cpu, ts in metrics_data:
-    if name not in st.session_state.cpu_history:
-        st.session_state.cpu_history[name] = []
-    st.session_state.cpu_history[name].append({"time": ts, "cpu": cpu})
-
+# ------------------ CPU HISTORY CHART ------------------
 st.markdown("---")
+chart_pod = st.selectbox("📈 View CPU chart for pod", FAKE_PODS, key="chart")
 
-# Only one selectbox with a unique key
-chart_pod = st.selectbox(
-    "📈 View CPU chart for pod",
-    [d[0] for d in metrics_data] if metrics_data else [],
-    key="chart_selectbox"
-)
-
-# Plot chart if pod has history
-if chart_pod and chart_pod in st.session_state.cpu_history:
-    history_df = pd.DataFrame(st.session_state.cpu_history[chart_pod])
-    if not history_df.empty:
-        fig = px.line(history_df, x="time", y="cpu", title=f"CPU Usage Over Time: {chart_pod} (millicores)")
-        st.plotly_chart(fig, use_container_width=True)
+if chart_pod in st.session_state.cpu_history and st.session_state.cpu_history[chart_pod]:
+    df = pd.DataFrame(st.session_state.cpu_history[chart_pod])
+    fig = px.line(df, x="time", y="cpu", title=f"CPU Usage Over Time: {chart_pod} (millicores)")
+    st.plotly_chart(fig, use_container_width=True)
 else:
-    st.warning("No pod selected or no CPU history available.")
+    st.warning("No CPU history for this pod yet.")
 
-# --- AUTO REFRESH ---
+# ------------------ AUTO REFRESH ------------------
 auto_refresh = st.checkbox("🔄 Auto-refresh every 5 seconds", value=True)
 if auto_refresh:
     time.sleep(5)

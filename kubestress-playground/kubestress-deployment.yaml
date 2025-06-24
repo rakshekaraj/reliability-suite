@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubestress-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubestress-dashboard
+  template:
+    metadata:
+      labels:
+        app: kubestress-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: kubestress-dashboard # Use same name you built
+          imagePullPolicy: Never # Don't pull from DockerHub
+          ports:
+            - containerPort: 8501
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
