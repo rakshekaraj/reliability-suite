@@ -55,7 +55,17 @@ for name, cpu, ts in metrics_data:
 
 st.markdown("---")
 chart_pod = st.selectbox("📈 View CPU chart for pod", [d[0] for d in metrics_data])
-history_df = pd.DataFrame(st.session_state.cpu_history[chart_pod])
+# history_df = pd.DataFrame(st.session_state.cpu_history[chart_pod])
+chart_pod = st.selectbox("📈 View CPU chart for pod", [d[0] for d in metrics_data] if metrics_data else [])
+
+if chart_pod and chart_pod in st.session_state.cpu_history:
+    history_df = pd.DataFrame(st.session_state.cpu_history[chart_pod])
+    if not history_df.empty:
+        fig = px.line(history_df, x="time", y="cpu", title=f"CPU Usage Over Time: {chart_pod} (millicores)")
+        st.plotly_chart(fig, use_container_width=True)
+else:
+    st.warning("No pod selected or no CPU history available.")
+
 if not history_df.empty:
     fig = px.line(history_df, x="time", y="cpu", title=f"CPU Usage Over Time: {chart_pod} (millicores)")
     st.plotly_chart(fig, use_container_width=True)
