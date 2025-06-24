@@ -1,4 +1,5 @@
 # Reliability Suite
+ Try out the idea w dummy pods here : https://reliability-suite.onrender.com
 
 A complete suite for simulating and visualizing reliability behavior in Kubernetes environments. This project combines failure injection with real-time Kubernetes autoscaling and resource monitoring via dashboards.
 
