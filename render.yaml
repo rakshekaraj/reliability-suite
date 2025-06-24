@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: kubestress-dashboard
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: kubestress-playground/Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    healthCheckPath: /
+    autoDeploy: true
