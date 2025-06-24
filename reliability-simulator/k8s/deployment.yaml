@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reliability-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: reliability-api
+  template:
+    metadata:
+      labels:
+        app: reliability-api
+    spec:
+      containers:
+        - name: api
+          image: reliability-api:latest
+          imagePullPolicy: Never # ✅ prevent it from pulling from DockerHub
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

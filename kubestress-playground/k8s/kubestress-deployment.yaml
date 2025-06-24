@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubestress-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubestress
+  template:
+    metadata:
+      labels:
+        app: kubestress
+    spec:
+      containers:
+        - name: dashboard
+          image: kubestress-dashboard:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8501

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubestress-service
+spec:
+  selector:
+    app: kubestress
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8501
+  type: NodePort
